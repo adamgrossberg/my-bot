@@ -18,7 +18,12 @@ def handle_message(event: dict, player_database: PlayerDatabase, slack_client: W
             if text_element.get('type') == 'user':
                 user_ids.add(text_element.get('user_id'))
 
-        if words[0] == "!cardio":
+        # Handle different point amounts
+        if words[0] == "!recovery":
+            for user_id in user_ids:
+                player_table.update_one({"_id": user_id}, {"$inc": {"points": 0.5}})
+            slack_client.reactions_add(name='person_in_lotus_position', channel=CHANNEL_ID, timestamp=message_timestamp)
+        elif words[0] == "!cardio":
             for user_id in user_ids:
                 player_table.update_one({"_id": user_id}, {"$inc": {"points": 1}})
             slack_client.reactions_add(name='runner', channel=CHANNEL_ID, timestamp=message_timestamp)
