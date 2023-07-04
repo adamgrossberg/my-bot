@@ -46,6 +46,11 @@ def handle_message(event: dict, database: Database, slack_client: WebClient):
             
 # Helper method to build and send the leaderboard or throwerboard message
 def leaderboard_helper(points_or_minutes: str, database: Database, slack_client: WebClient, CHANNEL_ID: str):
+    medals = {
+        1: ":first_place_medal:",
+        2: ":second_place_medal:",
+        3: ":third_place_medal:"
+    }
     leaderboard_text = ""
     points_dict = {}
     for player in database.get_all_players():
@@ -53,7 +58,7 @@ def leaderboard_helper(points_or_minutes: str, database: Database, slack_client:
     sorted_leaderboard = sorted(points_dict.items(), key=lambda x: x[1], reverse=True)
     standing = 1
     for player_tuple in sorted_leaderboard:
-        leaderboard_text += str (standing) + ") " + player_tuple[0] + ": " + str (player_tuple[1]) + " " + points_or_minutes + "\n"
+        leaderboard_text += medals.get(standing, " " + str (standing) + ") ") + player_tuple[0] + ": " + str (player_tuple[1]) + " " + points_or_minutes + "\n"
         standing += 1
     slack_client.chat_postMessage(
         channel=CHANNEL_ID,
