@@ -1,4 +1,4 @@
-from PlayerDatabase import PlayerDatabase
+from PlayerDatabase import *
 from slack.web.client import WebClient
 import os
 from enum import Enum
@@ -35,11 +35,8 @@ def handle_message(event: dict, player_database: PlayerDatabase, slack_client: W
                 slack_client.reactions_add(name='flying_disc', channel=CHANNEL_ID, timestamp=message_timestamp)
             else:
                 slack_client.reactions_add(name='stopwatch', channel=CHANNEL_ID, timestamp=message_timestamp)
-        elif words[0] == "!leaderboard":
-            leaderboard_helper('points', player_database, slack_client, CHANNEL_ID)
-            slack_client.reactions_add(name='octopus', channel=CHANNEL_ID, timestamp=message_timestamp)
-        elif words[0] == "!throwerboard" or words[0] == "!throwboard":
-            leaderboard_helper('minutes', player_database, slack_client, CHANNEL_ID)
+        elif words[0] == "!leaderboard" or words[0] == "!throwerboard" or words[0] == "!throwboard":
+            leaderboard_helper('points' if words[0] == "!leaderboard" else 'minutes', player_database, slack_client, CHANNEL_ID)
             slack_client.reactions_add(name='octopus', channel=CHANNEL_ID, timestamp=message_timestamp)
         else:
             activity_result = activities.get(words[0], None)
@@ -62,10 +59,10 @@ def leaderboard_helper(points_or_minutes: str, player_database: PlayerDatabase, 
     for player_tuple in sorted_leaderboard:
         leaderboard_text += str (standing) + ") " + player_tuple[0] + ": " + str (player_tuple[1]) + " " + points_or_minutes + "\n"
         standing += 1
-    slack_client.chat_postMessage(**{
-        'channel': CHANNEL_ID,
-        'icon_emoji': ':robot_face:',
-        'blocks': [{
+    slack_client.chat_postMessage(
+        channel=CHANNEL_ID,
+        icon_emoji=':robot_face:',
+        blocks=[{
             'type': 'section',
             'text': {
                 'type': 'mrkdwn',
@@ -74,4 +71,4 @@ def leaderboard_helper(points_or_minutes: str, player_database: PlayerDatabase, 
                 )
             }
         }]
-    })
+    )
