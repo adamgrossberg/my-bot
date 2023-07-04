@@ -12,7 +12,6 @@ def handle_message(event: dict, player_database: PlayerDatabase, slack_client: W
         '!field': (1.5, 'athletic_shoe')
     }
     CHANNEL_ID = os.environ['CHANNEL_ID']
-    player_table = player_database.players
     # team_table = player_database.teams
     message_timestamp = event.get('ts')
     text = event.get('text')
@@ -30,7 +29,7 @@ def handle_message(event: dict, player_database: PlayerDatabase, slack_client: W
         if words[0] == "!throw":
             if len(words) > 1 and str (words[1]).isnumeric():
                 for user_id in user_ids:
-                    player_table.update_one({"_id": user_id}, {"$inc": {"minutes": int (words[1])}})
+                    player_database.inc_player_values(user_id, 'minutes', int (words[1]))
                 slack_client.reactions_add(name='flying_disc', channel=CHANNEL_ID, timestamp=message_timestamp)
             else:
                 slack_client.reactions_add(name='stopwatch', channel=CHANNEL_ID, timestamp=message_timestamp)
@@ -41,17 +40,16 @@ def handle_message(event: dict, player_database: PlayerDatabase, slack_client: W
             activity_result = activities.get(words[0], None)
             if activity_result != None:
                 for user_id in user_ids:
-                    player_table.update_one({"_id": user_id}, {"$inc": {"points": activity_result[0]}})
+                    player_database.inc_player_values(user_id, 'points', activity_result[0])
                 slack_client.reactions_add(name=activity_result[1], channel=CHANNEL_ID, timestamp=message_timestamp)
             else:
                 slack_client.reactions_add(name='interrobang', channel=CHANNEL_ID, timestamp=message_timestamp)
             
 # Helper method to build and send the leaderboard or throwerboard message
 def leaderboard_helper(points_or_minutes: str, player_database: PlayerDatabase, slack_client: WebClient, CHANNEL_ID: str):
-    player_table = player_database.players
     leaderboard_text = ""
     points_dict = {}
-    for player in player_table.find():
+    for player in player_database.get_all_players():
         points_dict[player['name']] = player[points_or_minutes]
     sorted_leaderboard = sorted(points_dict.items(), key=lambda x: x[1], reverse=True)
     standing = 1
