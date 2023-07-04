@@ -1,7 +1,6 @@
-from PlayerDatabase import *
+from PlayerDatabase import PlayerDatabase
 from slack.web.client import WebClient
 import os
-from enum import Enum
 
 def handle_message(event: dict, player_database: PlayerDatabase, slack_client: WebClient):
     activities = {
