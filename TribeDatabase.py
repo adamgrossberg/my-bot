@@ -2,7 +2,7 @@
 from pymongo.mongo_client import MongoClient
 from collections.abc import Iterable
 
-class PlayerDatabase:
+class Database:
     def __init__(self, uri):
         self.client = MongoClient(uri)
         self.db = self.client.db

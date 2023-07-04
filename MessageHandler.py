@@ -1,8 +1,8 @@
-from PlayerDatabase import PlayerDatabase
+from TribeDatabase import Database
 from slack.web.client import WebClient
 import os
 
-def handle_message(event: dict, player_database: PlayerDatabase, slack_client: WebClient):
+def handle_message(event: dict, database: Database, slack_client: WebClient):
     activities = {
         '!recovery': (0.5, 'person_in_lotus_pose'),
         '!cardio': (1, 'runner'),
@@ -12,7 +12,6 @@ def handle_message(event: dict, player_database: PlayerDatabase, slack_client: W
         '!field': (1.5, 'athletic_shoe')
     }
     CHANNEL_ID = os.environ['CHANNEL_ID']
-    # team_table = player_database.teams
     message_timestamp = event.get('ts')
     text = event.get('text')
     words = text.split()
@@ -29,27 +28,27 @@ def handle_message(event: dict, player_database: PlayerDatabase, slack_client: W
         if words[0] == "!throw":
             if len(words) > 1 and str (words[1]).isnumeric():
                 for user_id in user_ids:
-                    player_database.inc_player_values(user_id, 'minutes', int (words[1]))
+                    database.inc_player_values(user_id, 'minutes', int (words[1]))
                 slack_client.reactions_add(name='flying_disc', channel=CHANNEL_ID, timestamp=message_timestamp)
             else:
                 slack_client.reactions_add(name='stopwatch', channel=CHANNEL_ID, timestamp=message_timestamp)
         elif words[0] == "!leaderboard" or words[0] == "!throwerboard" or words[0] == "!throwboard":
-            leaderboard_helper('points' if words[0] == "!leaderboard" else 'minutes', player_database, slack_client, CHANNEL_ID)
+            leaderboard_helper('points' if words[0] == "!leaderboard" else 'minutes', database, slack_client, CHANNEL_ID)
             slack_client.reactions_add(name='octopus', channel=CHANNEL_ID, timestamp=message_timestamp)
         else:
             activity_result = activities.get(words[0], None)
             if activity_result != None:
                 for user_id in user_ids:
-                    player_database.inc_player_values(user_id, 'points', activity_result[0])
+                    database.inc_player_values(user_id, 'points', activity_result[0])
                 slack_client.reactions_add(name=activity_result[1], channel=CHANNEL_ID, timestamp=message_timestamp)
             else:
                 slack_client.reactions_add(name='interrobang', channel=CHANNEL_ID, timestamp=message_timestamp)
             
 # Helper method to build and send the leaderboard or throwerboard message
-def leaderboard_helper(points_or_minutes: str, player_database: PlayerDatabase, slack_client: WebClient, CHANNEL_ID: str):
+def leaderboard_helper(points_or_minutes: str, database: Database, slack_client: WebClient, CHANNEL_ID: str):
     leaderboard_text = ""
     points_dict = {}
-    for player in player_database.get_all_players():
+    for player in database.get_all_players():
         points_dict[player['name']] = player[points_or_minutes]
     sorted_leaderboard = sorted(points_dict.items(), key=lambda x: x[1], reverse=True)
     standing = 1

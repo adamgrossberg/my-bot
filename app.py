@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, request, Response
 from slackeventsapi import SlackEventAdapter
-from PlayerDatabase import *
+from TribeDatabase import *
 from MessageHandler import handle_message
 from SlashCommandHandler import handle_slash_command
 import threading
@@ -17,7 +17,7 @@ slack_event_adapter = SlackEventAdapter(os.environ['SIGNING_SECRET'], '/slack/ev
 
 slack_client = slack.WebClient(token=os.environ['SLACK_TOKEN'])
 BOT_ID = slack_client.api_call('auth.test')['user_id']
-DATABASE = PlayerDatabase(os.environ['DATABASE_URI'])
+DATABASE = Database(os.environ['DATABASE_URI'])
 PLAYER_TABLE = DATABASE.players
 CHANNEL_NAME = os.environ['CHANNEL_NAME']
 CHANNEL_ID = os.environ['CHANNEL_ID']
