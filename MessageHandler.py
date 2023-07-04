@@ -27,7 +27,7 @@ def handle_message(event: dict, player_database: PlayerDatabase, slack_client: W
         for text_element in rich_text_elements:
             if text_element.get('type') == 'user':
                 user_ids.add(text_element.get('user_id'))
-
+        # Handle different commands
         if words[0] == "!throw":
             if len(words) > 1 and str (words[1]).isnumeric():
                 for user_id in user_ids:
@@ -47,7 +47,7 @@ def handle_message(event: dict, player_database: PlayerDatabase, slack_client: W
             else:
                 slack_client.reactions_add(name='interrobang', channel=CHANNEL_ID, timestamp=message_timestamp)
             
-
+# Helper method to build and send the leaderboard or throwerboard message
 def leaderboard_helper(points_or_minutes: str, player_database: PlayerDatabase, slack_client: WebClient, CHANNEL_ID: str):
     player_table = player_database.players
     leaderboard_text = ""
