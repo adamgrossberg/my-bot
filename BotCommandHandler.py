@@ -1,14 +1,24 @@
 from PlayerDatabase import PlayerDatabase
 from slack.web.client import WebClient
 import os
+from enum import Enum
 
 def handle_message(event: dict, player_database: PlayerDatabase, slack_client: WebClient):
-    
+    activities = {
+        '!recovery': (0.5, 'person_in_lotus_pose'),
+        '!cardio': (1, 'runner'),
+        '!gym': (1, 'weight_lifter'),
+        '!jim': (1, 'weight_lifter'),
+        '!workout': (1.5, 'athletic_shoe'),
+        '!field': (1.5, 'athletic_shoe')
+    }
     CHANNEL_ID = os.environ['CHANNEL_ID']
     player_table = player_database.players
+    # team_table = player_database.teams
     message_timestamp = event.get('ts')
     text = event.get('text')
     words = text.split()
+
 
     if words[0][0] == "!":
         user_ids = {event.get('user')}
@@ -18,24 +28,7 @@ def handle_message(event: dict, player_database: PlayerDatabase, slack_client: W
             if text_element.get('type') == 'user':
                 user_ids.add(text_element.get('user_id'))
 
-        # Handle different point amounts
-        if words[0] == "!recovery":
-            for user_id in user_ids:
-                player_table.update_one({"_id": user_id}, {"$inc": {"points": 0.5}})
-            slack_client.reactions_add(name='person_in_lotus_position', channel=CHANNEL_ID, timestamp=message_timestamp)
-        elif words[0] == "!cardio":
-            for user_id in user_ids:
-                player_table.update_one({"_id": user_id}, {"$inc": {"points": 1}})
-            slack_client.reactions_add(name='runner', channel=CHANNEL_ID, timestamp=message_timestamp)
-        elif words[0] == "!gym" or words[0] == "!jim":
-            for user_id in user_ids:
-                player_table.update_one({"_id": user_id}, {"$inc": {"points": 1}})
-            slack_client.reactions_add(name='weight_lifter', channel=CHANNEL_ID, timestamp=message_timestamp)
-        elif words[0] == "!workout" or words[0] == "!field":
-            for user_id in user_ids:
-                player_table.update_one({"_id": user_id}, {"$inc": {"points": 1.5}})
-            slack_client.reactions_add(name='athletic_shoe', channel=CHANNEL_ID, timestamp=message_timestamp)
-        elif words[0] == "!throw":
+        if words[0] == "!throw":
             if len(words) > 1 and str (words[1]).isnumeric():
                 for user_id in user_ids:
                     player_table.update_one({"_id": user_id}, {"$inc": {"minutes": int (words[1])}})
@@ -43,16 +36,23 @@ def handle_message(event: dict, player_database: PlayerDatabase, slack_client: W
             else:
                 slack_client.reactions_add(name='stopwatch', channel=CHANNEL_ID, timestamp=message_timestamp)
         elif words[0] == "!leaderboard":
-            leaderboard_helper('points', player_table, slack_client, CHANNEL_ID)
+            leaderboard_helper('points', player_database, slack_client, CHANNEL_ID)
             slack_client.reactions_add(name='octopus', channel=CHANNEL_ID, timestamp=message_timestamp)
         elif words[0] == "!throwerboard" or words[0] == "!throwboard":
-            leaderboard_helper('minutes', player_table, slack_client, CHANNEL_ID)
+            leaderboard_helper('minutes', player_database, slack_client, CHANNEL_ID)
             slack_client.reactions_add(name='octopus', channel=CHANNEL_ID, timestamp=message_timestamp)
         else:
-            slack_client.reactions_add(name='interrobang', channel=CHANNEL_ID, timestamp=message_timestamp)
+            activity_result = activities.get(words[0], None)
+            if activity_result != None:
+                for user_id in user_ids:
+                    player_table.update_one({"_id": user_id}, {"$inc": {"points": activity_result[0]}})
+                slack_client.reactions_add(name=activity_result[1], channel=CHANNEL_ID, timestamp=message_timestamp)
+            else:
+                slack_client.reactions_add(name='interrobang', channel=CHANNEL_ID, timestamp=message_timestamp)
             
 
-def leaderboard_helper(points_or_minutes: str, player_table, slack_client: WebClient, CHANNEL_ID: str):
+def leaderboard_helper(points_or_minutes: str, player_database: PlayerDatabase, slack_client: WebClient, CHANNEL_ID: str):
+    player_table = player_database.players
     leaderboard_text = ""
     points_dict = {}
     for player in player_table.find():
