@@ -69,3 +69,6 @@ class Database:
 
     def inc_team_value(self, query: dict, attr: str, increment: int):
         self.teams.update_one(query, {'$inc': {attr: increment}})
+
+    def get_all_teams(self):
+        return self.teams.find()

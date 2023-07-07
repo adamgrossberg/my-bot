@@ -4,7 +4,7 @@ import os
 
 def handle_message(event: dict, database: Database, slack_client: WebClient):
     activities = {
-        '!recovery': (0.5, 'person_in_lotus_pose'),
+        '!recovery': (0.5, 'person_in_lotus_position'),
         '!cardio': (1, 'runner'),
         '!gym': (1, 'weight_lifter'),
         '!jim': (1, 'weight_lifter'),
@@ -53,14 +53,29 @@ def leaderboard_helper(points_or_minutes: str, database: Database, slack_client:
         2: ":second_place_medal:",
         3: ":third_place_medal:"
     }
-    leaderboard_text = ""
-    points_dict = {}
-    for player in database.get_all_players():
-        points_dict[player['name']] = player[points_or_minutes]
-    sorted_leaderboard = sorted(points_dict.items(), key=lambda x: x[1], reverse=True)
+
+    team_leaderboard_text = ""
+    team_dict = {}
+    for team in database.get_all_teams():
+        team_dict[team['name']] = team['total_' + points_or_minutes]
+    sorted_team_leaderboard = sorted(team_dict.items(), key=lambda x: x[1], reverse=True)
     standing = 1
-    for player_tuple in sorted_leaderboard:
-        leaderboard_text += (
+    for team_tuple in sorted_team_leaderboard:
+        team_leaderboard_text += (
+            medals.get(standing, " " + str (standing) + ") ") + team_tuple[0] + ": " + 
+            str (team_tuple[1]) + " " + points_or_minutes + 
+            "\n"
+            )
+        standing += 1
+
+    player_leaderboard_text = ""
+    player_dict = {}
+    for player in database.get_all_players():
+        player_dict[player['name']] = player[points_or_minutes]
+    sorted_player_leaderboard = sorted(player_dict.items(), key=lambda x: x[1], reverse=True)
+    standing = 1
+    for player_tuple in sorted_player_leaderboard:
+        player_leaderboard_text += (
             medals.get(standing, " " + str (standing) + ") ") + player_tuple[0] + ": " + 
             str (player_tuple[1]) + " " + points_or_minutes + 
             "\n"
@@ -69,13 +84,24 @@ def leaderboard_helper(points_or_minutes: str, database: Database, slack_client:
     slack_client.chat_postMessage(
         channel=CHANNEL_ID,
         icon_emoji=':robot_face:',
-        blocks=[{
-            'type': 'section',
-            'text': {
-                'type': 'mrkdwn',
-                'text': (
-                    '*INDIVIDUAL ' + points_or_minutes.upper() + " LEADERBOARD:* \n" + leaderboard_text
-                )
+        blocks=[
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text': (
+                        '*TEAM ' + points_or_minutes.upper() + " LEADERBOARD:* \n" + team_leaderboard_text
+                    )
+                }
+            },
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text': (
+                        '*INDIVIDUAL ' + points_or_minutes.upper() + " LEADERBOARD:* \n" + player_leaderboard_text
+                    )
+                }
             }
-        }]
+        ]
     )
