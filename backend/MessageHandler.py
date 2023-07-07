@@ -28,7 +28,8 @@ def handle_message(event: dict, database: Database, slack_client: WebClient):
         if words[0] == "!throw":
             if len(words) > 1 and str (words[1]).isnumeric():
                 for user_id in user_ids:
-                    database.inc_player_values(user_id, 'minutes', int (words[1]))
+                    database.inc_player_value({'_id': user_id}, 'minutes', int (words[1]))
+                    database.inc_team_value({'_id': database.get_player_by_id(user_id)['team']}, 'total_minutes', int (words[1]))
                 slack_client.reactions_add(name='flying_disc', channel=CHANNEL_ID, timestamp=message_timestamp)
             else:
                 slack_client.reactions_add(name='stopwatch', channel=CHANNEL_ID, timestamp=message_timestamp)
@@ -39,7 +40,8 @@ def handle_message(event: dict, database: Database, slack_client: WebClient):
             activity_result = activities.get(words[0], None)
             if activity_result != None:
                 for user_id in user_ids:
-                    database.inc_player_values(user_id, 'points', activity_result[0])
+                    database.inc_player_value({'_id': user_id}, 'points', activity_result[0])
+                    database.inc_team_value({'_id': database.get_player_by_id(user_id)['team']}, 'total_points', activity_result[0])
                 slack_client.reactions_add(name=activity_result[1], channel=CHANNEL_ID, timestamp=message_timestamp)
             else:
                 slack_client.reactions_add(name='interrobang', channel=CHANNEL_ID, timestamp=message_timestamp)
