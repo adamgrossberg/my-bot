@@ -37,12 +37,12 @@ def handle_message(event: dict, database: Database, slack_client: WebClient):
             leaderboard_helper('points' if words[0] == "!leaderboard" else 'minutes', database, slack_client, CHANNEL_ID)
             slack_client.reactions_add(name='octopus', channel=CHANNEL_ID, timestamp=message_timestamp)
         else:
-            activity_result = activities.get(words[0], None)
-            if activity_result != None:
+            activity = activities.get(words[0], None)
+            if activity != None:
                 for user_id in user_ids:
-                    database.inc_player_value({'_id': user_id}, 'points', activity_result[0])
-                    database.inc_team_value({'_id': database.get_player_by_id(user_id)['team']}, 'total_points', activity_result[0])
-                slack_client.reactions_add(name=activity_result[1], channel=CHANNEL_ID, timestamp=message_timestamp)
+                    database.inc_player_value({'_id': user_id}, 'points', activity[0])
+                    database.inc_team_value({'_id': database.get_player_by_id(user_id)['team']}, 'total_points', activity[0])
+                slack_client.reactions_add(name=activity[1], channel=CHANNEL_ID, timestamp=message_timestamp)
             else:
                 slack_client.reactions_add(name='interrobang', channel=CHANNEL_ID, timestamp=message_timestamp)
             
